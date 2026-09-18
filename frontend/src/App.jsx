@@ -3,6 +3,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  useLocation,
 } from 'react-router-dom'
 
 import Navbar from './components/Navbar'
@@ -12,7 +13,9 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 const API_URL = 'http://localhost:5001/api/tasks'
 
-function App() {
+function AppContent() {
+  const location = useLocation()
+
   const [currentDate, setCurrentDate] = useState(new Date())
 
   // Liste des tâches
@@ -42,19 +45,29 @@ function App() {
   const monday = getMonday(currentDate)
 
   // Création automatique des 7 jours
-  const weekDays = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(monday)
+  const weekDays = Array.from(
+    { length: 7 },
+    (_, index) => {
+      const date = new Date(monday)
 
-    date.setDate(monday.getDate() + index)
+      date.setDate(
+        monday.getDate() + index
+      )
 
-    return date
-  })
+      return date
+    }
+  )
 
   // Charger les tâches depuis l'API
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem('token')
+
+        if (!token) {
+          setTasks([])
+          return
+        }
 
         const response = await fetch(API_URL, {
           headers: {
@@ -63,25 +76,32 @@ function App() {
         })
 
         if (!response.ok) {
-          throw new Error('Erreur lors du chargement des tâches')
+          throw new Error(
+            'Erreur lors du chargement des tâches'
+          )
         }
 
         const data = await response.json()
 
         setTasks(data)
       } catch (error) {
-        console.error('Erreur API :', error)
+        console.error(
+          'Erreur API :',
+          error
+        )
       }
     }
 
     fetchTasks()
-  }, [])
+  }, [location])
 
   // Semaine précédente
   const previousWeek = () => {
     const date = new Date(currentDate)
 
-    date.setDate(date.getDate() - 7)
+    date.setDate(
+      date.getDate() - 7
+    )
 
     setCurrentDate(date)
   }
@@ -90,7 +110,9 @@ function App() {
   const nextWeek = () => {
     const date = new Date(currentDate)
 
-    date.setDate(date.getDate() + 7)
+    date.setDate(
+      date.getDate() + 7
+    )
 
     setCurrentDate(date)
   }
@@ -102,10 +124,13 @@ function App() {
 
   // Formatage d'une date
   const formatDate = (date) => {
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-    }).format(date)
+    return new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        day: 'numeric',
+        month: 'long',
+      }
+    ).format(date)
   }
 
   // Titre de la semaine
@@ -113,13 +138,21 @@ function App() {
     const start = weekDays[0]
     const end = weekDays[6]
 
-    const startMonth = new Intl.DateTimeFormat('fr-FR', {
-      month: 'long',
-    }).format(start)
+    const startMonth =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          month: 'long',
+        }
+      ).format(start)
 
-    const endMonth = new Intl.DateTimeFormat('fr-FR', {
-      month: 'long',
-    }).format(end)
+    const endMonth =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          month: 'long',
+        }
+      ).format(end)
 
     if (startMonth === endMonth) {
       return `Semaine du ${start.getDate()} au ${end.getDate()} ${endMonth}`
@@ -142,8 +175,14 @@ function App() {
   // Convertir une date en YYYY-MM-DD
   const formatInputDate = (date) => {
     const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
+
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, '0')
+
+    const day = String(
+      date.getDate()
+    ).padStart(2, '0')
 
     return `${year}-${month}-${day}`
   }
@@ -158,7 +197,10 @@ function App() {
 
   // Vérifier si une tâche est en retard
   const isTaskOverdue = (task) => {
-    if (task.status === 'done' || task.completed) {
+    if (
+      task.status === 'done' ||
+      task.completed
+    ) {
       return false
     }
 
@@ -167,10 +209,24 @@ function App() {
     }
 
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
 
-    const taskDate = new Date(`${task.date}T00:00:00`)
-    taskDate.setHours(0, 0, 0, 0)
+    today.setHours(
+      0,
+      0,
+      0,
+      0
+    )
+
+    const taskDate = new Date(
+      `${task.date}T00:00:00`
+    )
+
+    taskDate.setHours(
+      0,
+      0,
+      0,
+      0
+    )
 
     return taskDate < today
   }
@@ -178,24 +234,37 @@ function App() {
   // Déterminer la couleur de la tâche
   const getTaskColors = (task) => {
     // 🟢 Terminé
-    if (task.status === 'done' || task.completed) {
+    if (
+      task.status === 'done' ||
+      task.completed
+    ) {
       return {
-        container: 'border-green-200 bg-green-50',
-        title: 'text-green-900',
-        secondary: 'text-green-700',
-        badge: 'bg-green-100 text-green-700',
-        label: 'Terminé',
+        container:
+          'border-green-200 bg-green-50',
+        title:
+          'text-green-900',
+        secondary:
+          'text-green-700',
+        badge:
+          'bg-green-100 text-green-700',
+        label:
+          'Terminé',
       }
     }
 
     // 🔴 En retard
     if (isTaskOverdue(task)) {
       return {
-        container: 'border-red-200 bg-red-50',
-        title: 'text-red-900',
-        secondary: 'text-red-700',
-        badge: 'bg-red-100 text-red-700',
-        label: 'En retard',
+        container:
+          'border-red-200 bg-red-50',
+        title:
+          'text-red-900',
+        secondary:
+          'text-red-700',
+        badge:
+          'bg-red-100 text-red-700',
+        label:
+          'En retard',
       }
     }
 
@@ -205,38 +274,56 @@ function App() {
       task.priority === 'urgent'
     ) {
       return {
-        container: 'border-orange-200 bg-orange-50',
-        title: 'text-orange-900',
-        secondary: 'text-orange-700',
-        badge: 'bg-orange-100 text-orange-700',
-        label: 'Prioritaire',
+        container:
+          'border-orange-200 bg-orange-50',
+        title:
+          'text-orange-900',
+        secondary:
+          'text-orange-700',
+        badge:
+          'bg-orange-100 text-orange-700',
+        label:
+          'Prioritaire',
       }
     }
 
     // 🟣 En cours
-    if (task.status === 'in-progress') {
+    if (
+      task.status === 'in-progress'
+    ) {
       return {
-        container: 'border-violet-200 bg-violet-50',
-        title: 'text-violet-900',
-        secondary: 'text-violet-700',
-        badge: 'bg-violet-100 text-violet-700',
-        label: 'En cours',
+        container:
+          'border-violet-200 bg-violet-50',
+        title:
+          'text-violet-900',
+        secondary:
+          'text-violet-700',
+        badge:
+          'bg-violet-100 text-violet-700',
+        label:
+          'En cours',
       }
     }
 
     // 🔵 À faire
     return {
-      container: 'border-blue-200 bg-blue-50',
-      title: 'text-blue-900',
-      secondary: 'text-blue-700',
-      badge: 'bg-blue-100 text-blue-700',
-      label: 'À faire',
+      container:
+        'border-blue-200 bg-blue-50',
+      title:
+        'text-blue-900',
+      secondary:
+        'text-blue-700',
+      badge:
+        'bg-blue-100 text-blue-700',
+      label:
+        'À faire',
     }
   }
 
   // Ouvrir la fenêtre pour créer une tâche
   const openTaskModal = (date) => {
-    const formattedDate = formatInputDate(date)
+    const formattedDate =
+      formatInputDate(date)
 
     setTaskToEdit(null)
     setSelectedDate(formattedDate)
@@ -260,25 +347,32 @@ function App() {
   // Créer ou modifier une tâche
   const saveTask = async (task) => {
     try {
-      const token = localStorage.getItem('token')
+      const token =
+        localStorage.getItem('token')
 
-      const existingTask = tasks.some(
-        (currentTask) => currentTask.id === task.id
-      )
+      const existingTask =
+        tasks.some(
+          (currentTask) =>
+            currentTask.id === task.id
+        )
 
       // Modification
       if (existingTask) {
-        const response = await fetch(
-          `${API_URL}/${task.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(task),
-          }
-        )
+        const response =
+          await fetch(
+            `${API_URL}/${task.id}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type':
+                  'application/json',
+                Authorization:
+                  `Bearer ${token}`,
+              },
+              body:
+                JSON.stringify(task),
+            }
+          )
 
         if (!response.ok) {
           throw new Error(
@@ -286,14 +380,18 @@ function App() {
           )
         }
 
-        const updatedTask = await response.json()
+        const updatedTask =
+          await response.json()
 
-        setTasks((currentTasks) =>
-          currentTasks.map((currentTask) =>
-            currentTask.id === updatedTask.id
-              ? updatedTask
-              : currentTask
-          )
+        setTasks(
+          (currentTasks) =>
+            currentTasks.map(
+              (currentTask) =>
+                currentTask.id ===
+                updatedTask.id
+                  ? updatedTask
+                  : currentTask
+            )
         )
 
         closeTaskModal()
@@ -302,14 +400,18 @@ function App() {
       }
 
       // Création
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(task),
-      })
+      const response =
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+            Authorization:
+              `Bearer ${token}`,
+          },
+          body:
+            JSON.stringify(task),
+        })
 
       if (!response.ok) {
         throw new Error(
@@ -317,16 +419,22 @@ function App() {
         )
       }
 
-      const createdTask = await response.json()
+      const createdTask =
+        await response.json()
 
-      setTasks((currentTasks) => [
-        ...currentTasks,
-        createdTask,
-      ])
+      setTasks(
+        (currentTasks) => [
+          ...currentTasks,
+          createdTask,
+        ]
+      )
 
       closeTaskModal()
     } catch (error) {
-      console.error('Erreur API :', error)
+      console.error(
+        'Erreur API :',
+        error
+      )
     }
   }
 
@@ -335,9 +443,11 @@ function App() {
     taskId,
     newStatus
   ) => {
-    const task = tasks.find(
-      (currentTask) => currentTask.id === taskId
-    )
+    const task =
+      tasks.find(
+        (currentTask) =>
+          currentTask.id === taskId
+      )
 
     if (!task) {
       return
@@ -350,19 +460,26 @@ function App() {
     }
 
     try {
-      const token = localStorage.getItem('token')
+      const token =
+        localStorage.getItem('token')
 
-      const response = await fetch(
-        `${API_URL}/${taskId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updatedTask),
-        }
-      )
+      const response =
+        await fetch(
+          `${API_URL}/${taskId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body:
+              JSON.stringify(
+                updatedTask
+              ),
+          }
+        )
 
       if (!response.ok) {
         throw new Error(
@@ -370,55 +487,76 @@ function App() {
         )
       }
 
-      const savedTask = await response.json()
+      const savedTask =
+        await response.json()
 
-      setTasks((currentTasks) =>
-        currentTasks.map((currentTask) =>
-          currentTask.id === taskId
-            ? savedTask
-            : currentTask
-        )
+      setTasks(
+        (currentTasks) =>
+          currentTasks.map(
+            (currentTask) =>
+              currentTask.id ===
+              taskId
+                ? savedTask
+                : currentTask
+          )
       )
     } catch (error) {
-      console.error('Erreur API :', error)
+      console.error(
+        'Erreur API :',
+        error
+      )
     }
   }
 
   // Marquer une tâche comme terminée avec la checkbox
-  const toggleTaskCompleted = async (taskId) => {
-    const task = tasks.find(
-      (currentTask) => currentTask.id === taskId
-    )
+  const toggleTaskCompleted = async (
+    taskId
+  ) => {
+    const task =
+      tasks.find(
+        (currentTask) =>
+          currentTask.id === taskId
+      )
 
     if (!task) {
       return
     }
 
     const isCompleted =
-      task.status === 'done' || task.completed
+      task.status === 'done' ||
+      task.completed
 
     const updatedTask = {
       ...task,
-      completed: !isCompleted,
-      status: !isCompleted
-        ? 'done'
-        : 'todo',
+      completed:
+        !isCompleted,
+      status:
+        !isCompleted
+          ? 'done'
+          : 'todo',
     }
 
     try {
-      const token = localStorage.getItem('token')
+      const token =
+        localStorage.getItem('token')
 
-      const response = await fetch(
-        `${API_URL}/${taskId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(updatedTask),
-        }
-      )
+      const response =
+        await fetch(
+          `${API_URL}/${taskId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type':
+                'application/json',
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body:
+              JSON.stringify(
+                updatedTask
+              ),
+          }
+        )
 
       if (!response.ok) {
         throw new Error(
@@ -426,34 +564,46 @@ function App() {
         )
       }
 
-      const savedTask = await response.json()
+      const savedTask =
+        await response.json()
 
-      setTasks((currentTasks) =>
-        currentTasks.map((currentTask) =>
-          currentTask.id === taskId
-            ? savedTask
-            : currentTask
-        )
+      setTasks(
+        (currentTasks) =>
+          currentTasks.map(
+            (currentTask) =>
+              currentTask.id ===
+              taskId
+                ? savedTask
+                : currentTask
+          )
       )
     } catch (error) {
-      console.error('Erreur API :', error)
+      console.error(
+        'Erreur API :',
+        error
+      )
     }
   }
 
   // Supprimer une tâche
-  const deleteTask = async (taskId) => {
+  const deleteTask = async (
+    taskId
+  ) => {
     try {
-      const token = localStorage.getItem('token')
+      const token =
+        localStorage.getItem('token')
 
-      const response = await fetch(
-        `${API_URL}/${taskId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response =
+        await fetch(
+          `${API_URL}/${taskId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        )
 
       if (!response.ok) {
         throw new Error(
@@ -461,105 +611,117 @@ function App() {
         )
       }
 
-      setTasks((currentTasks) =>
-        currentTasks.filter(
-          (task) => task.id !== taskId
-        )
+      setTasks(
+        (currentTasks) =>
+          currentTasks.filter(
+            (task) =>
+              task.id !== taskId
+          )
       )
     } catch (error) {
-      console.error('Erreur API :', error)
+      console.error(
+        'Erreur API :',
+        error
+      )
     }
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <Routes>
 
-        {/* Page de connexion */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+      {/* Page de connexion */}
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-        {/* Application TaskFlow */}
-        <Route
-          path="*"
-          element={
-            <ProtectedRoute>
-              <div className="min-h-screen bg-slate-50">
+      {/* Application TaskFlow */}
+      <Route
+        path="*"
+        element={
+          <ProtectedRoute>
+            <div className="min-h-screen bg-slate-50">
 
-                <Navbar />
+              <Navbar />
 
-                <main className="max-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+              <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
 
-                  {/* En-tête */}
-                  <div className="mb-8">
+                {/* En-tête */}
+                <div className="mb-8">
 
-                    <p className="text-sm font-medium text-blue-800">
-                      {formatWeekTitle()}
-                    </p>
+                  <p className="text-sm font-medium text-blue-800">
+                    {formatWeekTitle()}
+                  </p>
 
-                    <h1 className="mt-2 text-3xl font-bold text-blue-950">
-                      Ma semaine
-                    </h1>
+                  <h1 className="mt-2 text-3xl font-bold text-blue-950">
+                    Ma semaine
+                  </h1>
 
-                    <p className="mt-2 text-slate-500">
-                      Organisez vos tâches et gardez le contrôle de votre semaine.
-                    </p>
+                  <p className="mt-2 text-slate-500">
+                    Organisez vos tâches et gardez le contrôle de votre semaine.
+                  </p>
 
-                  </div>
+                </div>
 
-                  {/* Navigation de la semaine */}
-                  <div className="mb-6 flex flex-wrap items-center justify-between gap-6">
+                {/* Navigation de la semaine */}
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-6">
 
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
 
-                      <button
-                        type="button"
-                        onClick={previousWeek}
-                        className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-100"
-                      >
-                        ←
-                      </button>
+                    <button
+                      type="button"
+                      onClick={previousWeek}
+                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+                    >
+                      ←
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={nextWeek}
-                        className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-100"
-                      >
-                        →
-                      </button>
-
-                    </div>
-
-                    <div className='flex justify-end'>
-                      <button
-                        type="button"
-                        onClick={goToToday}
-                        className="rounded-lg bg-blue-950 px-4 py-2 font-medium text-white hover:bg-blue-900"
-                      >
-                       Aujourd'hui
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={nextWeek}
+                      className="rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+                    >
+                      →
+                    </button>
 
                   </div>
 
-                  {/* Jours de la semaine */}
-                  <div className="flex flex-wrap gap-4">
+                  <div className="flex justify-end">
 
-                    {weekDays.map((date, index) => {
+                    <button
+                      type="button"
+                      onClick={goToToday}
+                      className="rounded-lg bg-blue-950 px-4 py-2 font-medium text-white hover:bg-blue-900"
+                    >
+                      Aujourd'hui
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* Jours de la semaine */}
+                <div className="flex flex-wrap gap-4">
+
+                  {weekDays.map(
+                    (date, index) => {
 
                       const localDate =
-                        formatInputDate(date)
+                        formatInputDate(
+                          date
+                        )
 
                       // Vérifier si cette journée est aujourd'hui
-                      const today = isToday(date)
+                      const today =
+                        isToday(date)
 
                       // Tâches du jour
-                      const dayTasks = tasks.filter(
-                        (task) =>
-                          task.date === localDate
-                      )
+                      const dayTasks =
+                        tasks.filter(
+                          (task) =>
+                            task.date ===
+                            localDate
+                        )
 
                       return (
                         <div
@@ -640,13 +802,16 @@ function App() {
                                 {
                                   month: 'long',
                                 }
-                              ).format(date)}
+                              ).format(
+                                date
+                              )}
                             </p>
 
                           </div>
 
                           {/* Liste des tâches */}
-                          {dayTasks.length === 0 ? (
+                          {dayTasks.length ===
+                          0 ? (
 
                             <p className="text-sm text-slate-400">
                               Aucune tâche
@@ -656,145 +821,161 @@ function App() {
 
                             <div className="space-y-3">
 
-                              {dayTasks.map((task) => {
+                              {dayTasks.map(
+                                (task) => {
 
-                                const colors =
-                                  getTaskColors(task)
+                                  const colors =
+                                    getTaskColors(
+                                      task
+                                    )
 
-                                return (
-                                  <div
-                                    key={task.id}
-                                    className={`rounded-lg border p-3 transition ${colors.container}`}
-                                  >
+                                  return (
+                                    <div
+                                      key={
+                                        task.id
+                                      }
+                                      className={`rounded-lg border p-3 transition ${colors.container}`}
+                                    >
 
-                                    {/* Titre + actions */}
-                                    <div className="flex items-start gap-2 text-xs">
+                                      {/* Titre + actions */}
+                                      <div className="flex items-start gap-2 text-xs">
 
-                                      {/* Checkbox */}
-                                      <input
-                                        type="checkbox"
-                                        checked={
-                                          task.status === 'done' ||
-                                          task.completed
-                                        }
-                                        onChange={() =>
-                                          toggleTaskCompleted(
-                                            task.id
-                                          )
-                                        }
-                                        className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-blue-900"
-                                        aria-label="Marquer comme terminée"
-                                      />
-
-                                      {/* Titre */}
-                                      <div className='min-w-0 flex-1'>
-                                        <p
-                                          className={`font-semibold leading-5 ${
+                                        {/* Checkbox */}
+                                        <input
+                                          type="checkbox"
+                                          checked={
                                             task.status ===
                                               'done' ||
                                             task.completed
-                                              ? 'text-slate-400 line-through'
-                                              : colors.title
-                                          }`}
-                                        >
-                                          {task.title}
-                                        </p>
-                                      </div>
-
-                                      {/* Boutons */}
-                                      <div className="flex shrink-0 items-center gap-1">
-
-                                        {/* Modifier */}
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            openEditModal(
-                                              task
-                                            )
                                           }
-                                          className="rounded-md text-sm text-slate-400 hover:bg-white/70 hover:text-blue-700"
-                                          aria-label="Modifier la tâche"
-                                          title="Modifier"
-                                        >
-                                          ✏️
-                                        </button>
-
-                                        {/* Supprimer */}
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            deleteTask(
+                                          onChange={() =>
+                                            toggleTaskCompleted(
                                               task.id
                                             )
                                           }
-                                          className="rounded-md py-1 text-sm text-slate-400 hover:bg-white/70 hover:text-red-600"
-                                          aria-label="Supprimer la tâche"
-                                          title="Supprimer"
+                                          className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-blue-900"
+                                          aria-label="Marquer comme terminée"
+                                        />
+
+                                        {/* Titre */}
+                                        <div className="min-w-0 flex-1">
+
+                                          <p
+                                            className={`font-semibold leading-5 ${
+                                              task.status ===
+                                                'done' ||
+                                              task.completed
+                                                ? 'text-slate-400 line-through'
+                                                : colors.title
+                                            }`}
+                                          >
+                                            {task.title}
+                                          </p>
+
+                                        </div>
+
+                                        {/* Boutons */}
+                                        <div className="flex shrink-0 items-center gap-1">
+
+                                          {/* Modifier */}
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              openEditModal(
+                                                task
+                                              )
+                                            }
+                                            className="rounded-md text-sm text-slate-400 hover:bg-white/70 hover:text-blue-700"
+                                            aria-label="Modifier la tâche"
+                                            title="Modifier"
+                                          >
+                                            ✏️
+                                          </button>
+
+                                          {/* Supprimer */}
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              deleteTask(
+                                                task.id
+                                              )
+                                            }
+                                            className="rounded-md py-1 text-sm text-slate-400 hover:bg-white/70 hover:text-red-600"
+                                            aria-label="Supprimer la tâche"
+                                            title="Supprimer"
+                                          >
+                                            🗑️
+                                          </button>
+
+                                        </div>
+
+                                      </div>
+
+                                      {/* Heure */}
+                                      {task.time && (
+                                        <p
+                                          className={`mt-2 text-sm ${colors.secondary}`}
                                         >
-                                          🗑️
-                                        </button>
+                                          {task.time}
+                                        </p>
+                                      )}
+
+                                      {/* Catégorie */}
+                                      <p
+                                        className={`mt-2 text-xs font-medium ${colors.secondary}`}
+                                      >
+                                        {task.category}
+                                      </p>
+
+                                      {/* Statut directement dans la bulle */}
+                                      <div className="mt-3">
+
+                                        {task.status ===
+                                          'done' ||
+                                        task.completed ? (
+
+                                          <span className="inline-flex rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">
+                                            🟢 Terminé
+                                          </span>
+
+                                        ) : (
+
+                                          <select
+                                            value={
+                                              task.status
+                                            }
+                                            onChange={(
+                                              event
+                                            ) =>
+                                              changeTaskStatus(
+                                                task.id,
+                                                event
+                                                  .target
+                                                  .value
+                                              )
+                                            }
+                                            className={`w-full cursor-pointer rounded-full border-0 px-3 py-1.5 text-xs font-medium outline-none ${colors.badge}`}
+                                            aria-label="Modifier le statut"
+                                          >
+
+                                            <option value="todo">
+                                              🔵 À faire
+                                            </option>
+
+                                            <option value="in-progress">
+                                              🟣 En cours
+                                            </option>
+
+                                          </select>
+
+                                        )}
 
                                       </div>
 
                                     </div>
-
-                                    {/* Heure */}
-                                    {task.time && (
-                                      <p
-                                        className={`mt-2 text-sm ${colors.secondary}`}
-                                      >
-                                        {task.time}
-                                      </p>
-                                    )}
-
-                                    {/* Catégorie */}
-                                    <p
-                                      className={`mt-2 text-xs font-medium ${colors.secondary}`}
-                                    >
-                                      {task.category}
-                                    </p>
-
-                                    {/* Statut directement dans la bulle */}
-                                    <div className="mt-3">
-
-                                      {task.status === 'done' ||
-                                      task.completed ? (
-
-                                        <span className="inline-flex rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700">
-                                          🟢 Terminé
-                                        </span>
-
-                                      ) : (
-
-                                        <select
-                                          value={task.status}
-                                          onChange={(event) =>
-                                            changeTaskStatus(
-                                              task.id,
-                                              event.target.value
-                                            )
-                                          }
-                                          className={`w-full cursor-pointer rounded-full border-0 px-3 py-1.5 text-xs font-medium outline-none ${colors.badge}`}
-                                          aria-label="Modifier le statut"
-                                        >
-
-                                          <option value="todo">
-                                            🔵 À faire
-                                          </option>
-
-                                          <option value="in-progress">
-                                            🟣 En cours
-                                          </option>
-
-                                        </select>
-
-                                      )}
-
-                                    </div>
-
-                                  </div>
-                                )
-                              })}
+                                  )
+                                }
+                              )}
 
                             </div>
 
@@ -804,7 +985,9 @@ function App() {
                           <button
                             type="button"
                             onClick={() =>
-                              openTaskModal(date)
+                              openTaskModal(
+                                date
+                              )
                             }
                             className={`
                               mt-6 w-full rounded-lg border border-dashed
@@ -822,27 +1005,35 @@ function App() {
 
                         </div>
                       )
-                    })}
+                    }
+                  )}
 
-                  </div>
+                </div>
 
-                  {/* Fenêtre d'ajout / modification */}
-                  <TaskModal
-                    isOpen={isModalOpen}
-                    onClose={closeTaskModal}
-                    selectedDate={selectedDate}
-                    onSave={saveTask}
-                    taskToEdit={taskToEdit}
-                  />
+                {/* Fenêtre d'ajout / modification */}
+                <TaskModal
+                  isOpen={isModalOpen}
+                  onClose={closeTaskModal}
+                  selectedDate={selectedDate}
+                  onSave={saveTask}
+                  taskToEdit={taskToEdit}
+                />
 
-                </main>
+              </main>
 
-              </div>
-            </ProtectedRoute>
-          }
-        />
+            </div>
+          </ProtectedRoute>
+        }
+      />
 
-      </Routes>
+    </Routes>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   )
 }
