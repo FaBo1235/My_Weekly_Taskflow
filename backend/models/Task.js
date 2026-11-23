@@ -15,6 +15,16 @@ const Task = sequelize.define(
         allowNull: false,
     },
 
+    parentTaskId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'tasks',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+
     title: {
       type: DataTypes.STRING,
       allowNull: false,

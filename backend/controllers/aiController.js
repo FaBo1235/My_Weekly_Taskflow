@@ -8,7 +8,7 @@ const breakdownTask = async (req, res) => {
   try {
     const { title, description } = req.body
 
-    if (!title || !title.trim()) {
+    if (typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({
         message: 'Le titre de la tâche est obligatoire',
       })
@@ -35,7 +35,7 @@ Les sous-tâches doivent :
 `
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -67,10 +67,29 @@ Les sous-tâches doivent :
     res.json(result)
   } catch (error) {
     console.error('Erreur Gemini :', error)
-
-    res.status(500).json({
-      message: 'Impossible de découper la tâche avec l’IA',
+  
+    if (error.status === 503) {
+      return res.status(503).json({
+        message: 'Le service IA est temporairement indisponible. Réessaie dans quelques instants.',
+      })
+    }
+  
+    if (error.status === 429) {
+      return res.status(429).json({
+        message: 'La limite de requêtes IA est atteinte. Réessaie plus tard.',
+      })
+    }
+  
+    if (error.status === 404) {
+      return res.status(502).json({
+        message: 'Le modèle IA demandé est indisponible.',
+      })
+    }
+  
+    return res.status(500).json({
+      message: 'Une erreur est survenue lors de la génération des sous-tâches.',
     })
+  
   }
 }
 

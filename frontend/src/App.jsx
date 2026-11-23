@@ -345,98 +345,122 @@ function AppContent() {
   }
 
   // Créer ou modifier une tâche
-  const saveTask = async (task) => {
-    try {
-      const token =
-        localStorage.getItem('token')
+ 
+  // Créer ou modifier une tâche et enregistrer ses sous-tâches
+  
+const saveTask = async (task, subtasksToSave = []) => {
+  const savedTasks = []
 
-      const existingTask =
-        tasks.some(
-          (currentTask) =>
-            currentTask.id === task.id
-        )
+  try {
+    const token = localStorage.getItem('token')
 
-      // Modification
-      if (existingTask) {
-        const response =
-          await fetch(
-            `${API_URL}/${task.id}`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type':
-                  'application/json',
-                Authorization:
-                  `Bearer ${token}`,
-              },
-              body:
-                JSON.stringify(task),
-            }
-          )
+    if (!token) {
+      throw new Error('Vous devez être connecté.')
+    }
 
-        if (!response.ok) {
-          throw new Error(
-            'Erreur lors de la modification de la tâche'
-          )
-        }
+    const existingTask = tasks.some(
+      (currentTask) => currentTask.id === task.id
+    )
 
-        const updatedTask =
-          await response.json()
-
-        setTasks(
-          (currentTasks) =>
-            currentTasks.map(
-              (currentTask) =>
-                currentTask.id ===
-                updatedTask.id
-                  ? updatedTask
-                  : currentTask
-            )
-        )
-
-        closeTaskModal()
-
-        return
-      }
-
-      // Création
-      const response =
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
-            Authorization:
-              `Bearer ${token}`,
-          },
-          body:
-            JSON.stringify(task),
-        })
+    // Modifier une tâche existante
+    if (existingTask) {
+      const response = await fetch(`${API_URL}/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(task),
+      })
 
       if (!response.ok) {
         throw new Error(
-          'Erreur lors de la création de la tâche'
+          'Erreur lors de la modification de la tâche'
         )
       }
 
-      const createdTask =
-        await response.json()
+      const updatedTask = await response.json()
 
-      setTasks(
-        (currentTasks) => [
-          ...currentTasks,
-          createdTask,
-        ]
+      setTasks((currentTasks) =>
+        currentTasks.map((currentTask) =>
+          currentTask.id === updatedTask.id
+            ? updatedTask
+            : currentTask
+        )
       )
 
       closeTaskModal()
-    } catch (error) {
-      console.error(
-        'Erreur API :',
-        error
-      )
+      return
     }
+
+    // Créer une tâche dans MySQL
+    const createTask = async (taskData) => {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(taskData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+
+        throw new Error(
+          errorData.message || 'Erreur lors de la création de la tâche'
+        )
+      }
+
+      const createdTask = await response.json()
+
+      savedTasks.push(createdTask)
+
+      return createdTask
+    }
+
+    // 1. Créer la tâche principale
+    const parentTask = await createTask(task)
+
+    // 2. Créer les sous-tâches avec leur identifiant parent
+    for (const subtaskTitle of subtasksToSave) {
+      await createTask({
+        title: subtaskTitle,
+        date: task.date,
+        description: null,
+        time: null,
+        priority: task.priority,
+        category: task.category,
+        reminder: null,
+        status: 'todo',
+        completed: false,
+        parentTaskId: parentTask.id,
+      })
+    }
+
+    // 3. Actualiser le calendrier
+    setTasks((currentTasks) => [
+      ...currentTasks,
+      ...savedTasks,
+    ])
+
+    // 4. Fermer la fenêtre après la sauvegarde
+    closeTaskModal()
+
+  } catch (error) {
+    // Conserver dans le calendrier les tâches déjà enregistrées
+    if (savedTasks.length > 0) {
+      setTasks((currentTasks) => [
+        ...currentTasks,
+        ...savedTasks,
+      ])
+    }
+
+    console.error('Erreur API :', error)
+    alert(error.message)
   }
+}
+
 
   // Modifier directement le statut depuis la bulle
   const changeTaskStatus = async (

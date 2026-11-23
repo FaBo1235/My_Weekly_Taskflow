@@ -27,6 +27,18 @@ Task.belongsTo(User, {
   foreignKey: 'userId',
 })
 
+// Relations Task -> Subtasks
+Task.hasMany(Task, {
+  as: 'subtasks',
+  foreignKey: 'parentTaskId',
+  onDelete: 'CASCADE',
+})
+
+Task.belongsTo(Task, {
+  as: 'parentTask',
+  foreignKey: 'parentTaskId',
+})
+
 // Relations User -> RecurringTasks
 User.hasMany(RecurringTask, {
   foreignKey: 'userId',

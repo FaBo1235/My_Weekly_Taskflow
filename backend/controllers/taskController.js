@@ -1,15 +1,17 @@
+
 const Task = require('../models/Task')
 
 // GET /api/tasks
 const getTasks = async (req, res) => {
   try {
     const tasks = await Task.findAll({
-        
-        where : { userId: req.user.userId }, // Assurez-vous que l'utilisateur est authentifié et que req.user est défini
-        order: [
-            ['date', 'ASC'],
-            ['time', 'ASC'],
-        ],
+      where: {
+        userId: req.user.userId,
+      },
+      order: [
+        ['date', 'ASC'],
+        ['time', 'ASC'],
+      ],
     })
 
     res.json(tasks)
@@ -26,11 +28,17 @@ const getTasks = async (req, res) => {
 const getTaskById = async (req, res) => {
   try {
     const task = await Task.findOne({
-        where: {
-            id: req.params.id,
-            userId: req.user.userId, // Assurez-vous que l'utilisateur est authentifié et que req.user est défini
+      where: {
+        id: req.params.id,
+        userId: req.user.userId,
+      },
+      include: [
+        {
+          model: Task,
+          as: 'subtasks',
         },
-        })
+      ],
+    })
 
     if (!task) {
       return res.status(404).json({
@@ -61,6 +69,7 @@ const createTask = async (req, res) => {
       reminder,
       status,
       completed,
+      parentTaskId,
     } = req.body
 
     if (!title || !date) {
@@ -69,8 +78,26 @@ const createTask = async (req, res) => {
       })
     }
 
+    // Vérifier la tâche principale si c'est une sous-tâche
+    if (parentTaskId !== undefined && parentTaskId !== null) {
+      const parentTask = await Task.findOne({
+        where: {
+          id: parentTaskId,
+          userId: req.user.userId,
+          parentTaskId: null,
+        },
+      })
+
+      if (!parentTask) {
+        return res.status(400).json({
+          message: 'La tâche principale est introuvable ou invalide',
+        })
+      }
+    }
+
     const task = await Task.create({
-    userId: req.user.userId, // Assurez-vous que l'utilisateur est authentifié et que req.user est défini
+      userId: req.user.userId,
+      parentTaskId: parentTaskId ?? null,
       title,
       description,
       date,
@@ -96,10 +123,10 @@ const createTask = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const task = await Task.findOne({
-        where: {
-            id: req.params.id,
-            userId: req.user.userId, // Assurez-vous que l'utilisateur est authentifié et que req.user est défini
-        },
+      where: {
+        id: req.params.id,
+        userId: req.user.userId,
+      },
     })
 
     if (!task) {
@@ -109,15 +136,15 @@ const updateTask = async (req, res) => {
     }
 
     await task.update({
-        title: req.body.title,
-        description: req.body.description,
-        date: req.body.date,
-        time: req.body.time,
-        priority: req.body.priority,
-        category: req.body.category,
-        reminder: req.body.reminder,
-        status: req.body.status,
-        completed: req.body.completed,
+      title: req.body.title,
+      description: req.body.description,
+      date: req.body.date,
+      time: req.body.time,
+      priority: req.body.priority,
+      category: req.body.category,
+      reminder: req.body.reminder,
+      status: req.body.status,
+      completed: req.body.completed,
     })
 
     res.json(task)
@@ -134,11 +161,12 @@ const updateTask = async (req, res) => {
 const deleteTask = async (req, res) => {
   try {
     const task = await Task.findOne({
-        where: {
-            id: req.params.id,
-            userId: req.user.userId, // Assurez-vous que l'utilisateur est authentifié et que req.user est défini
-        },
+      where: {
+        id: req.params.id,
+        userId: req.user.userId,
+      },
     })
+
     if (!task) {
       return res.status(404).json({
         message: 'Tâche introuvable',
