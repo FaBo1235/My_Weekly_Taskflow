@@ -744,6 +744,7 @@ function AppContent() {
                                               key={subtask.id}
                                               className="flex items-start gap-2"
                                             >
+                                              {/* Checkbox */}
                                               <input
                                                 type="checkbox"
                                                 checked={isCompleted}
@@ -754,8 +755,9 @@ function AppContent() {
                                                 aria-label={`Terminer ${subtask.title}`}
                                               />
 
+                                              {/* Titre */}
                                               <span
-                                                className={`min-w-0 text-xs leading-5 ${
+                                                className={`min-w-0 flex-1 text-xs leading-5 ${
                                                   isCompleted
                                                     ? 'text-slate-400 line-through'
                                                     : 'text-slate-700'
@@ -763,6 +765,37 @@ function AppContent() {
                                               >
                                                 {subtask.title}
                                               </span>
+
+                                              {/* Actions */}
+                                              <div className="flex shrink-0 items-center gap-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openEditModal(subtask)}
+                                                  className="rounded px-1 text-xs text-slate-400 hover:bg-white hover:text-blue-700"
+                                                  title="Modifier la sous-tâche"
+                                                  aria-label={`Modifier ${subtask.title}`}
+                                                >
+                                                  ✏️
+                                                </button>
+
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (
+                                                      window.confirm(
+                                                        `Supprimer la sous-tâche "${subtask.title}" ?`
+                                                      )
+                                                    ) {
+                                                      deleteTask(subtask.id)
+                                                    }
+                                                  }}
+                                                  className="rounded px-1 text-xs text-slate-400 hover:bg-white hover:text-red-600"
+                                                  title="Supprimer la sous-tâche"
+                                                  aria-label={`Supprimer ${subtask.title}`}
+                                                >
+                                                  🗑️
+                                                </button>
+                                              </div>
                                             </div>
                                           )
                                         })}
